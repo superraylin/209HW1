@@ -1,6 +1,7 @@
 import numpy as np
 import pdb
 import random
+from copy import deepcopy
 
 class robot:
     def __init__(self, errorPr=0):
@@ -89,48 +90,46 @@ class robot:
 
     def valueIteration(self, horizon,discount):
         valueHolder = self.valueMatrix #a value matrix holder to hold update value in each nextState
-        #populate value holder with intial value according to reward map
+
+        #populate valueHolder with intial value 0.0
         for i in range(6):
             for j in range(6):
                 for k in range(12):
-                    if (self.reward[i][j] != 0):
-                        valueHolder[i][j][k] = 0.0 #self.reward[i][j] #self.reward[i][j] #assign value if reward matrix is not zero
+                    valueHolder[i][j][k] = 0.0
 
-        new_valueHolder = valueHolder
+        new_valueHolder = deepcopy(valueHolder) #declare new_valueHolder for output
+
         for n in range(horizon): #iterate until meet horizon
-            valueHolder = new_valueHolder #assign update value nextstate value
+            valueHolder = deepcopy(new_valueHolder) #assign update value to V(s')
 
+            #for all state
             for i in range(6):
                 for j in range(6):
                     for k in range(12):
-                        #for all state
-                        actionValueCollection = [0]
+
+                        actionValueCollection = [0] #clear a temp value to compare 7 action's value
+
+                        #iterate through 7 action
                         for a in range(7):
                             currentState = [i,j,k]
                             temp = 0.0
+                            #iterate through next state
                             for y in range(6):
                                 for x in range(6):
                                     for z in range(12):
-                                        #for all possible next state
-                                        if(valueHolder[y][x][z] > 0.0):
-                                            print(y,x,z)
-                                            print(valueHolder[y][x][z])
-                                        temp += self.probActionState(currentState,[y,x,z],self.actionSpace[a])* (float(self.reward[i][j]) + discount*valueHolder[y][x][z])
-                                        # if(self.probActionState(currentState,[y,x,z],self.actionSpace[a])!=0):
-                                        #     print(currentState,y,x,z)
-                                        #print(valueHolder[y][x][k])
-                            # if(temp!= 1.0):
-                            #     print(currentState)
+                                            # if(valueHolder[y][x][z] > 0.0):
+                                        #     print(y,x,z)
+                                        #     print(valueHolder[y][x][z])
+                                        temp += self.probActionState(currentState,[y,x,z],self.actionSpace[a]) * (float(self.reward[i][j]) + discount * valueHolder[y][x][z])
+
                             actionValueCollection.append(temp)
                             temp = 0.0
-                        # if(i == j == 4):
-                        #     print(actionValueCollection)
-                        actionValueCollection.pop(0)
-                        # print(actionValueCollection)
-                        # print(np.max(actionValueCollection))
+                        actionValueCollection.pop(0) #remove place holder, first component
+
                         new_valueHolder[i][j][k] = np.max(actionValueCollection)
-                            #function output possible nextstate given action nextState
-                            #for each possilbe nextstate calc psa*V(s)
+
+        #print(valueHolder)
+        #print (new_valueHolder)
         return new_valueHolder
 
         # def possibleNextState(self,currentState):
@@ -152,5 +151,5 @@ if __name__ == '__main__':
         print(robot.computeNextState([0,0,3], ('F', '+')))
         print(robot.probActionState([0,0,3],[0,1,4], ('F', '+')))
         #print(robot.probActionState([5,5,11],[5,5,11],('0','0')))
-        print(robot.valueIteration(1,0.9))
+        print(robot.valueIteration(3,0.9))
         #print(robot.reward[1][0])
