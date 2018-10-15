@@ -201,7 +201,7 @@ if __name__ == '__main__':
         #Problem 4b
         robot = robot(0,0.9)  #initialize with error probability and discount factor
         #problem 5a
-        #robot = robot(0.25,0.9) 
+        #robot = robot(0.25,0.9)
         a = time.time()
         robot.valueIteration(1000) #horizon set to 1000
         b= time.time()

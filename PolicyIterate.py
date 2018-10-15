@@ -23,6 +23,9 @@ class robot:
 					   [-100, -100, -100, -100, -100, -100],
 						]
 		self.valueMatrix = np.array([[[0.0 for _ in range(12)] for _ in range(6)] for _ in range(6)])
+
+		#Problem 3a)
+		#Policy Matrix
 		self.actionMatrix = [[[['0', '0'] for _ in range(12)] for _ in range(6)] for _ in range(6)]
 
 	def computeNextState(self, currentState, action, prerotateError=True):
@@ -105,6 +108,33 @@ class robot:
 			else:
 				return 0
 
+	#Problem 3b
+	# the function to generate trajectory
+	def getTrajectory(self, startPoint, actionMatrix):
+		result = []
+		idx = startPoint[:]
+		result.append(idx)
+		i = 0
+		while idx[0] != 4 or idx[1] != 3:
+			idx = self.computeNextState(idx, actionMatrix[idx[0]][idx[1]][idx[2]], prerotateError=False)
+			if idx in result: break
+			result.append(idx)
+			print(idx)
+		return result
+
+	#Problem 3b
+	# the function to plot trajectory
+	def plotTrajetory(self, trajectory):
+		tra = trajectory
+		plt.plot([t[1] for t in tra], [t[0] for t in tra])
+		plt.ylabel('y-axis')
+		plt.xlabel('x-axis')
+		plt.title('trajectory of an action')
+		plt.ylim(0,5)
+		plt.xlim(0,5)
+		plt.grid()
+		plt.show()
+
 	def getReward(self, state):
 		return self.reward[state[0], state[1]]
 
@@ -112,6 +142,7 @@ class robot:
 		down = set([5,6,7])
 		return 1.0 if state[0]==4 and state[1]==3 and state[2] in down else 0.0
 
+	#Initial Policy
 	def initialPolicy(self):
 		# flood the actionMatrix with initial policy
 		# goal square idx (y, x) = (4, 3)
@@ -155,28 +186,8 @@ class robot:
 						#pdb.set_trace()
 					self.actionMatrix[y][x][h] = List[0][1]
 
-	def getTrajectory(self, startPoint, actionMatrix):
-		result = []
-		idx = startPoint[:]
-		result.append(idx)
-		i = 0
-		while idx[0] != 4 or idx[1] != 3:
-			idx = self.computeNextState(idx, actionMatrix[idx[0]][idx[1]][idx[2]], prerotateError=False)
-			if idx in result: break
-			result.append(idx)
-			print(idx)
-		return result
-
-
-	def plotTrajetory(self, trajectory):
-		tra = trajectory
-		plt.plot([t[1] for t in tra], [t[0] for t in tra])
-		plt.ylabel('y-axis')
-		plt.xlabel('x-axis')
-		plt.title('trajectory of an action')
-		plt.grid()
-		plt.show()
-
+	#Problem 3d
+	#Policy evluation
 	def computeValue(self, iteration=20, modified=False):
 		def isAjcent(currentState, nextState):
 			return False if sum([abs(currentState[i]-nextState[i]) for i in range(2)]) > 1 \
@@ -226,7 +237,8 @@ class robot:
 		x = np.dot(np.linalg.pinv(np.identity(432)-A), b)
 		self.valueMatrix = np.resize(x, (6,6,12))
 
-
+	#Problem 3f
+	# policy optimization
 	def updatePolicy(self):
 		updated = False
 		for i in range(6):
@@ -252,6 +264,8 @@ class robot:
 						updated = True
 		return updated
 
+	#Problem 3g
+	#the policy iteration
 	def policyIteration(self, iteration=20, modified=False):
 		self.initialPolicy()
 		updated = True
@@ -263,22 +277,17 @@ class robot:
 
 
 if __name__ == '__main__':
-	robot = robot(errorPr=0.1, discount=0.9)
+	robot = robot(errorPr=0, discount=0.9)
 	modifiedReward = False
-	#print(robot.computeNextState([0,0,1], ['B', '+']))
-	#print(robot.probActionState([5,5,11],[5,5,1], ['F', '+']))
+
 	robot.initialPolicy()
-	#result = robot.getTrajectory([5,5,0], robot.actionMatrix)
-	#robot.computeValue()
 	robot.computeValue(iteration=20, modified=modifiedReward)
-	#pdb.set_trace()
 	robot.updatePolicy()
-	#robot.policyIteration()
+
 	a = time.time()
 	robot.policyIteration(iteration=20, modified=modifiedReward)
 	b = time.time()
 	print('Time comsume of policy iteration: {:.3f}'.format(b-a))
-	result = robot.getTrajectory([4,1,0], robot.actionMatrix)
-	#robot.plotTrajetory(result)
-	#pdb.set_trace()
-	print(robot.actionMatrix)
+
+	result = robot.getTrajectory([4,1,6], robot.actionMatrix)
+	robot.plotTrajetory(result)

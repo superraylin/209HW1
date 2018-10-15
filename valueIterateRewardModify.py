@@ -8,27 +8,70 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 class robot:
+    #init robot (errorPr, discount)
+    #errorPr: the probability of pre-rotation error
+    #discount: the discount factor, gamma, for time weighted reward
     def __init__(self, errorPr=0,discount = 1):
+        #problem 1a
+        self.valueMatrix = np.array([[[0.0 for _ in range(12)] for _ in range(6)] for _ in range(6)])
+        #Problem 1b
+        # action Space: 'F' for forward, 'B' for backward, '0' for still,
+        #               '+' for clockwise, '-' anticlockwise
+        self.actionSpace = [['F', '+'], ['F', '0'], ['F', '-'],
+                            ['B', '+'], ['B', '0'], ['B', '-'],
+                            ['0', '0']]
+        #Policy matrix
+        self.actionMatrix = [[[['0', '0'] for _ in range(12)] for _ in range(6)] for _ in range(6)]
         self.discount = discount
         self.errorPr = errorPr
+        #Reward map
         self.reward = [[-100, -100, -100, -100, -100, -100],
                        [-100, 0,    0,    0,    0,    -100],
                        [-100, 0,    -10,  0,    -10,  -100],
                        [-100, 0,    -10,  0,    -10,  -100],
                        [-100, 0,    -10,  1,    -10,  -100],
                        [-100, -100, -100, -100, -100, -100],]
-        self.valueMatrix = np.array([[[0.0 for _ in range(12)] for _ in range(6)] for _ in range(6)])
-        self.actionMatrix = [[[['0', '0'] for _ in range(12)] for _ in range(6)] for _ in range(6)]
-        self.actionSpace = [['F', '+'], ['F', '0'], ['F', '-'],
-                            ['B', '+'], ['B', '0'], ['B', '-'],
-                            ['0', '0']]
 
 
 
+
+    #Problem 1c
+    # Psas' fucntion (currentState,nextState,action)
+    # return the probability of next state given action and current state
+    #
+    #currentState: indicate the current state of robot [y,x,rotation]
+    #nextState: indicate the next state of robot [y,x,rotation]
+    #action: an action from Action Space
+    def probActionState(self, currentState, nextState, action):
+        if action[0] == '0':
+            return 1 if currentState == nextState else 0
+
+        if abs(currentState[0]-nextState[0])>1 or abs(currentState[1]-nextState[1])>1:
+            return 0
+        else:
+            intentNextState = self.computeNextState(currentState, action, False)
+            temp = currentState[:]
+            temp[2] = (temp[2]+1)%12
+            errorNextState1 = self.computeNextState(temp, action, False)
+            temp = currentState[:]
+            temp[2] = (temp[2]-1)%12
+            errorNextState2 = self.computeNextState(temp, action, False)
+
+            if intentNextState == nextState:
+                return 1-2*self.errorPr
+            elif nextState == errorNextState1 or nextState == errorNextState2:
+                return self.errorPr
+            else:
+                return 0
+
+    #Problem 1d
+    #computeNextState (currentState,action,prerotateError)
+    #return next state give current action and current state
+    #
+    #currentState: indiciate the current state of robot [y,x,rotation]
+    #actoin: an action from Action Space
+    #prerotateError: a boollean to indicate if pre-rotation error is in consideration
     def computeNextState(self, currentState, action, prerotateError=True):
-        # prerotateError manually control
-        # currentState & nextState: [y, x, head]
-        # action ('F', '+'): 'F' for forward, 'B' for backward, '0' for still, '+' for clockwise, '-' anticlockwise
         if action[0] == '0':
             return currentState
 
@@ -68,38 +111,24 @@ class robot:
 
         return nextState
 
-    def probActionState(self, currentState, nextState, action):
-        # currentState & nextState: [y, x, head]
-        # action ('F', '+'): 'F' for forward, 'B' for backward, '0' for still, '+' for clockwise, '-' anticlockwise
-        if action[0] == '0':
-            return 1 if currentState == nextState else 0
-
-        if abs(currentState[0]-nextState[0])>1 or abs(currentState[1]-nextState[1])>1:
-            return 0
-        else:
-            intentNextState = self.computeNextState(currentState, action, False)
-            temp = currentState[:]
-            temp[2] = (temp[2]+1)%12
-            errorNextState1 = self.computeNextState(temp, action, False)
-            temp = currentState[:]
-            temp[2] = (temp[2]-1)%12
-            errorNextState2 = self.computeNextState(temp, action, False)
-
-            if intentNextState == nextState:
-                return 1-2*self.errorPr
-            elif nextState == errorNextState1 or nextState == errorNextState2:
-                return self.errorPr
-            else:
-                return 0
-
+    #Problem 2a
+    # getReward(state)
+    # return the reward points given state
+    #
+    # state: robot state [y,x,rotation]
     def getReward(self, state):
         return self.reward[state[0], state[1]]
 
-# A Value iteration function: (horizon)
-# horizon: limit the maximum iteration, in case of convergence never happened
-#
-# return valueMatrix, actionMatrix
+    #Problem 4a
+    # valueIteration(horizon)
+    # this function perform value iteration
+    # horizon: limit the maximum iteration, in case of convergence never happened
+    #
+    # return valueMatrix, actionMatrix
+    # valueMatrix: the value of each state
+    # actionMatrix: policy matrix, each state corresponding to one action
     def valueIteration(self, horizon):
+        self.valueMatrix = np.zeros((6,6,12)) #reset valueMatrix to zeros
         for n in range(horizon): #iterate until meet horizon
 
             #assign update value to Q(s',a)
@@ -122,7 +151,7 @@ class robot:
                             nextState.append(self.computeNextState([i, j, (k+1)%12], self.actionSpace[a], False))
                             nextState.append(self.computeNextState([i, j, (k-1)%12], self.actionSpace[a], False))
 
-                            #Modified reward point base on 5(b), reward valid iff heading down
+                            #Problem 5b: modifiied reward point to be valid only at down orientation
                             for state in nextState:
                                 if(self.reward[i][j]>0 and currentState[2] in [5,6,7]):
                                     reward = self.reward[i][j]
@@ -133,10 +162,10 @@ class robot:
 
                                 #Calculate Q(s,a)
                                 Qsa += self.probActionState(currentState,state,self.actionSpace[a]) * \
-                                        (float(reward)+ self.discount * valueHolder[state[0]][state[1]][state[2]])
+                                        (float(self.reward[i][j])+ self.discount * valueHolder[state[0]][state[1]][state[2]])
                             #Store Q(s,a)
                             actionValueCollection.append(Qsa)
-                        Qsa = 0.0
+                        Qsa = 0.0 #reset Qsa value
 
                         #Compare Q(s,a1)~Q(s,a7), choose the action with highest Q(s,a)
                         self.valueMatrix[i][j][k] = np.max(actionValueCollection)
@@ -177,9 +206,12 @@ class robot:
         plt.show()
 
 if __name__ == '__main__':
-        robot = robot(0.0025,0.9)
+        #Problem 4b
+        robot = robot(0,0.9)  #initialize with error probability and discount factor
+        #problem 5a
+        #robot = robot(0.25,0.9)
         a = time.time()
-        robot.valueIteration(1000)
+        robot.valueIteration(1000) #horizon set to 1000
         b= time.time()
         print('Time comsume of value iteration: {:.3f}'.format(b-a))
         result = robot.getTrajectory([4,1,6], robot.actionMatrix)
