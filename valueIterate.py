@@ -94,17 +94,22 @@ class robot:
     def getReward(self, state):
         return self.reward[state[0], state[1]]
 
+# A Value iteration function: (horizon, discount)
+# horizon: limit the maximum iteration, in case of convergence never happened
+# discount: discount factor, for reward point
+# return valueMatrix, actionMatrix
     def valueIteration(self, horizon,discount):
-
         for n in range(horizon): #iterate until meet horizon
-            valueHolder = deepcopy(self.valueMatrix) #assign update value to Q(s',a)
+
+            #assign update value to Q(s',a)
+            valueHolder = deepcopy(self.valueMatrix)
 
             #Iterate through all Current State
             for i in range(6):
                 for j in range(6):
                     for k in range(12):
 
-                        actionValueCollection = [] #clear a temp value to compare 7 action's value
+                        actionValueCollection = [] #Hold 7 Q(s,a)
 
                         #iterate through 7 action
                         for a in range(7):
