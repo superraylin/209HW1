@@ -176,6 +176,7 @@ class robot:
         idx = startPoint[:]
         result.append(idx)
         i = 0
+        print(idx)
         while idx[0] != 4 or idx[1] != 3:
             idx = self.computeNextState(idx, actionMatrix[idx[0]][idx[1]][idx[2]],prerotateError=False)
             if idx in result:
@@ -187,7 +188,11 @@ class robot:
 
 
     def plotTrajetory(self, trajectory):
+        value = [self.valueMatrix[tra[0]][tra[1]][tra[2]] for tra in trajectory]
+        print('value of the trajectory is: {}'.format(value))
+        print('sum of the value of the trajectory: {:.3f}'.format(sum(value)))
         tra = trajectory
+
         plt.plot([t[1] for t in tra], [t[0] for t in tra])
         plt.ylabel('y-axis')
         plt.xlabel('x-axis')
@@ -199,7 +204,7 @@ class robot:
 
 if __name__ == '__main__':
         #Problem 4b
-        robot = robot(0,0.9)  #initialize with error probability and discount factor
+        robot = robot(.0,0.9)  #initialize with error probability and discount factor
         #problem 5a
         #robot = robot(0.25,0.9)
         a = time.time()

@@ -195,6 +195,9 @@ class robot:
 
 
     def plotTrajetory(self, trajectory):
+        value = [self.valueMatrix[tra[0]][tra[1]][tra[2]] for tra in trajectory]
+        print('value of the trajectory is: {}'.format(value))
+        print('sum of the value of the trajectory: {:.3f}'.format(sum(value)))
         tra = trajectory
         plt.plot([t[1] for t in tra], [t[0] for t in tra])
         plt.ylabel('y-axis')
